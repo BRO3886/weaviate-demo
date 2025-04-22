@@ -1,16 +1,25 @@
+import warnings
+
 import clip
 import torch
 from PIL import Image
 
-_device = "cuda" if torch.cuda.is_available() else "cpu"
-_model, _preprocess = clip.load("ViT-B/32", device=_device)
-
 
 class Embedder:
     def __init__(self):
-        self.model = _model
-        self.preprocess = _preprocess
-        self.device = _device
+        with warnings.catch_warnings():
+            warnings.filterwarnings("ignore", category=ResourceWarning)
+            self.device = "cuda" if torch.cuda.is_available() else "cpu"
+            self.model, self.preprocess = clip.load("ViT-B/32", device=self.device)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, exc_type, exc_val, exc_tb):
+        if hasattr(self, "model"):
+            self.model = None
+            self.preprocess = None
+            torch.cuda.empty_cache()
 
     def embed(self, image: Image.Image) -> torch.Tensor:
         return self.model.encode_image(

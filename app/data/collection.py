@@ -1,0 +1,47 @@
+ImageCaption = {
+    "class": "ImageCaption",
+    "description": "A collection of images and their captions with pre-computed CLIP vectors.",
+    "vectorIndexType": "hnsw",
+    "vectorIndexConfig": {"distance": "cosine"},
+    "vectorizer": "none",
+    "properties": [
+        {
+            "name": "image_embedding",
+            "description": "Pre-computed CLIP image embedding",
+            "dataType": ["number"],
+            "moduleConfig": {},
+            "indexFilterable": False,
+            "vectorizePropertyName": False,
+        },
+        {
+            "name": "caption_embeddings",
+            "description": "Pre-computed CLIP text embeddings for one or more captions",
+            "dataType": ["number[]"],
+            "moduleConfig": {},
+            "indexFilterable": False,
+            "vectorizePropertyName": False,
+        },
+        {
+            "name": "image_url",
+            "description": "URL of the image",
+            "dataType": ["text"],
+            "moduleConfig": {},
+            "indexFilterable": True,
+            "indexSearchable": True,
+        },
+        {
+            "name": "caption_texts",
+            "description": "Original text captions (multiple captions possible)",
+            "dataType": ["text[]"],
+            "moduleConfig": {},
+            "indexFilterable": True,
+            "indexSearchable": True,
+        },
+    ],
+    "invertedIndexConfig": {
+        "stopwords": {"preset": "en"},
+        "indexTimestamps": False,
+        "indexNullState": False,
+        "indexPropertyLength": False,
+    },
+}
