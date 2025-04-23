@@ -2,8 +2,8 @@ import logging
 
 from fastapi import APIRouter, Depends
 
-from app.core import get_embedder
-from app.core.embedder import Embedder
+from app.services import get_embedder
+from app.services.embedder import Embedder
 from app.core.logger import get_logger
 
 health_router = APIRouter()

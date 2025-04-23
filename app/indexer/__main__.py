@@ -8,11 +8,11 @@ import weaviate
 from datasets import Dataset
 from PIL import Image
 
-from app.core import get_embedder
-from app.core.embedder import Embedder
 from app.core.logger import get_logger
-from app.core.search import Document, WeaviateSearch
 from app.data.images import image_dataset
+from app.services import get_embedder
+from app.services.embedder import Embedder
+from app.services.search import IndexableDoc, WeaviateSearch
 
 BATCH_SIZE = 100
 
@@ -68,7 +68,7 @@ def index_row(
     try:
         path = f"static/{filename}"
         image.save(path)
-        search.index(Document(img_id, image, captions, path))
+        search.index(IndexableDoc(img_id, image, captions, path))
     except Exception as e:
         logger.error("error embedding image %s: error: %s", img_id, e)
 

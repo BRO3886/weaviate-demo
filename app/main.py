@@ -3,7 +3,7 @@ from contextlib import asynccontextmanager
 from fastapi import FastAPI
 
 from app.api import router
-from app.core import close_services, init_services
+from app.services import close_services, init_services
 
 
 @asynccontextmanager
