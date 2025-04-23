@@ -8,6 +8,7 @@ from PIL import Image
 from weaviate import WeaviateClient
 from weaviate.collections.classes.data import DataReference
 
+import app.utils as utils
 from app.core.logger import get_logger
 from app.data.collection import Caption as CaptionCollection
 from app.data.collection import Image as ImageCollection
@@ -149,4 +150,38 @@ class WeaviateSearch(Search):
             return sorted(results, key=lambda x: x["score"], reverse=True)
         except Exception as e:
             self.logger.error(f"Error searching: {e}")
+            raise e
+
+    def image_search(
+        self,
+        query: Image.Image,
+        top_k: int = 10,
+    ) -> List[Document]:
+        try:
+            image_embedding = self.embedder.embed_image(query)
+            image_collection = self.client.collections.get("Image")
+            resp = image_collection.query.near_vector(
+                near_vector=image_embedding.tolist()[0],
+                limit=top_k,
+                return_properties=["imageUrl"],
+                return_metadata=wvc.query.MetadataQuery(distance=True),
+            )
+
+            if not resp.objects:
+                return []
+
+            results: List[Document] = []
+            for obj in resp.objects:
+                image_url = obj.properties.get("imageUrl", "")
+                image_id = obj.uuid
+                distance_score = obj.metadata.distance if obj.metadata else None
+                result_item = {
+                    "image_url": image_url,
+                    "score": distance_score,
+                    "metadata": {"image_id": str(image_id)},
+                }
+                results.append(result_item)
+            return sorted(results, key=lambda x: x["score"], reverse=True)
+        except Exception as e:
+            self.logger.error(f"Error searching image: {e}")
             raise e

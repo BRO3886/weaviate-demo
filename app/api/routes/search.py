@@ -1,8 +1,9 @@
 import logging
 import time
 
-from fastapi import APIRouter, Depends
+from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import JSONResponse
+from PIL import Image
 
 from app.core.logger import get_logger
 from app.models.search import TextSearchRequest
@@ -39,5 +40,23 @@ async def search_text(
                 "query_time": (end_time - start_time) * 1000,
             }
         )
+    except Exception as e:
+        return JSONResponse(content={"error": str(e)}, status_code=500)
+
+
+@search_router.post("/search-image")
+async def search_image(
+    file: UploadFile = File(...),
+    weaviate: WeaviateSearch = Depends(get_weaviate),
+    logger: logging.Logger = Depends(get_logger),
+):
+    if file.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
+        return JSONResponse(content={"error": "file must be an image"}, status_code=400)
+
+    # read image
+    image = Image.open(file.file)
+    try:
+        results = weaviate.image_search(image)
+        return JSONResponse(content={"results": results}, status_code=200)
     except Exception as e:
         return JSONResponse(content={"error": str(e)}, status_code=500)
