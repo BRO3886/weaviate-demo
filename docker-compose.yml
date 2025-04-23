@@ -19,5 +19,21 @@ services:
       AUTHENTICATION_ANONYMOUS_ACCESS_ENABLED: "true"
       PERSISTENCE_DATA_PATH: "/var/lib/weaviate"
       CLUSTER_HOSTNAME: "node1"
+    networks:
+      - weaviate
+
+  weaviate-console:
+    image: semitechnologies/weaviate-console:latest
+    ports:
+      - "8081:80"
+    depends_on:
+      - weaviate
+    networks:
+      - weaviate
+
+networks:
+  weaviate:
+    driver: bridge
+
 volumes:
   weaviate_data:
