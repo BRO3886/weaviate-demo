@@ -12,3 +12,6 @@ run-app:
 
 run-dev:
 	uvicorn app.main:app --reload
+
+run-indexer:
+	uv run -m app.indexer

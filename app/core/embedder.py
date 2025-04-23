@@ -21,10 +21,15 @@ class Embedder:
             self.preprocess = None
             torch.cuda.empty_cache()
 
-    def embed(self, image: Image.Image) -> torch.Tensor:
-        return self.model.encode_image(
-            self.preprocess(image).unsqueeze(0).to(self.device)
-        )
+    def embed_image(self, image: Image.Image) -> torch.Tensor:
+        with torch.no_grad():
+            image_input = self.preprocess(image).unsqueeze(0).to(self.device)
+            return self.model.encode_image(image_input)
+
+    def embed_text(self, text: str) -> torch.Tensor:
+        with torch.no_grad():
+            text_input = clip.tokenize(text).to(self.device)
+            return self.model.encode_text(text_input)
 
 
 # with torch.no_grad():

@@ -13,6 +13,9 @@ def get_weaviate() -> WeaviateSearch:
 
 
 def get_embedder() -> Embedder:
+    global _embedder
+    if _embedder is None:
+        _embedder = Embedder()
     return _embedder
 
 
