@@ -1,0 +1,49 @@
+/* Base styles */
+body {
+  background-color: #f9fafb;
+}
+
+.container {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 1rem;
+}
+
+/* Button styles */
+button {
+  transition: all 0.3s ease;
+}
+
+button:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+button:disabled {
+  opacity: 0.7;
+  cursor: not-allowed;
+  transform: none;
+  box-shadow: none;
+}
+
+/* Result display */
+pre {
+  white-space: pre-wrap;
+  word-break: break-all;
+}
+
+/* Image upload */
+.image-upload-placeholder {
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.image-upload-placeholder:hover {
+  background-color: #f3f4f6;
+}
+
+/* Results container */
+.results-container {
+  max-height: 80vh;
+  overflow-y: auto;
+}

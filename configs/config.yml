@@ -4,4 +4,10 @@ logging:
   datefmt: "%Y-%m-%d %H:%M:%S"
 
 
+weaviate:
+  host: "localhost"
+  port: 8080
+
+indexer:  
+  batch_size: 100
 

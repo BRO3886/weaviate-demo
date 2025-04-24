@@ -8,13 +8,14 @@ import weaviate
 from datasets import Dataset
 from PIL import Image
 
+from app.config import get_config
 from app.core.logger import get_logger
 from app.data.images import image_dataset
 from app.services import get_embedder
 from app.services.embedder import Embedder
 from app.services.search import IndexableDoc, WeaviateSearch
 
-BATCH_SIZE = 100
+BATCH_SIZE = get_config().get("indexer.batch_size", 50)
 
 
 def index_batch(

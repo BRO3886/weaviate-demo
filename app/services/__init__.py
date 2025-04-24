@@ -1,5 +1,6 @@
 import weaviate
 
+from app.config import get_config
 from app.services.embedder import Embedder
 from app.services.search import WeaviateSearch
 
@@ -22,7 +23,11 @@ def get_embedder() -> Embedder:
 async def init_services():
     global _embedder, _client, _search
     _embedder = Embedder()
-    _client = weaviate.connect_to_local()
+    config = get_config()
+    _client = weaviate.connect_to_local(
+        host=config.get("weaviate.host", "localhost"),
+        port=config.get("weaviate.port", 8080),
+    )
     _search = WeaviateSearch(client=_client, embedder=_embedder)
     _search.create_collections_if_not_exists()
 

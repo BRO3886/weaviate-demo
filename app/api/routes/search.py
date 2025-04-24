@@ -1,11 +1,13 @@
 import logging
 import time
+from http.client import HTTPException
 
 from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
 
 from app.core.logger import get_logger
+from app.models.exceptions import InternalServerError, ValidationError
 from app.models.search import TextSearchRequest
 from app.services import get_weaviate
 from app.services.search import WeaviateSearch
@@ -22,13 +24,11 @@ async def search_text(
     start_time = time.time()
     query = body.query.strip()
     if not query:
-        return JSONResponse(content={"error": "query is required"}, status_code=400)
+        raise ValidationError(message="query is required")
 
     top_k = body.top_k
     if top_k < 1:
-        return JSONResponse(
-            content={"error": "top_k must be greater than 0"}, status_code=400
-        )
+        raise ValidationError(message="top_k must be greater than 0")
 
     try:
         results = weaviate.search(query, top_k)
@@ -41,7 +41,7 @@ async def search_text(
             }
         )
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        raise InternalServerError(message=str(e))
 
 
 @search_router.post("/search-image")
@@ -51,12 +51,11 @@ async def search_image(
     logger: logging.Logger = Depends(get_logger),
 ):
     if file.content_type not in ["image/jpeg", "image/png", "image/jpg"]:
-        return JSONResponse(content={"error": "file must be an image"}, status_code=400)
+        raise ValidationError(message="file must be an image")
 
-    # read image
     image = Image.open(file.file)
     try:
         results = weaviate.image_search(image)
         return JSONResponse(content={"results": results}, status_code=200)
     except Exception as e:
-        return JSONResponse(content={"error": str(e)}, status_code=500)
+        raise InternalServerError(message=str(e))
