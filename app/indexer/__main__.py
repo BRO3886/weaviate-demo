@@ -16,6 +16,7 @@ from app.services.embedder import Embedder
 from app.services.search import IndexableDoc, WeaviateSearch
 
 BATCH_SIZE = get_config().get("indexer.batch_size", 100)
+MAX_COUNT = 31783
 
 
 def index_batch(
@@ -129,6 +130,13 @@ if __name__ == "__main__":
     args = parser.parse_args()
     logger = get_logger("indexer")
     if args.count is not None:
+        if args.count > MAX_COUNT:
+            logger.warning(
+                "count is greater than the maximum number of images to index, setting count to %d",
+                MAX_COUNT,
+            )
+            args.count = MAX_COUNT
+
         dataset = image_dataset.select(range(args.count))
         index(logger, dataset)
     else:
