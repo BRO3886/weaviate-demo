@@ -20,10 +20,7 @@ data_files = [
 logger.info("loading dataset")
 image_dataset: Dataset = load_dataset(
     "parquet",
-    data_files=[
-        path.join("/Users/sidv/Desktop/projects/go/typeface/flickr30k/data", f)
-        for f in data_files
-    ],
+    data_files=[path.join("flickr30k/data", f) for f in data_files],
     split="train",
 )
 logger.info("dataset loaded with %d rows", image_dataset.num_rows)

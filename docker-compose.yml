@@ -21,7 +21,18 @@ services:
       CLUSTER_HOSTNAME: "node1"
     networks:
       - weaviate
-
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--spider",
+          "-q",
+          "http://localhost:8080/v1/.well-known/ready",
+        ]
+      interval: 10s
+      timeout: 100s
+      retries: 10
   weaviate-console:
     image: semitechnologies/weaviate-console:latest
     ports:
@@ -30,6 +41,22 @@ services:
       - weaviate
     networks:
       - weaviate
+
+  app:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "8000:8000"
+    networks:
+      - weaviate
+    depends_on:
+      weaviate:
+        condition: service_healthy
+    volumes:
+      - ./static:/app/static
+    environment:
+      - WEAVIATE_HOST=weaviate
 
 networks:
   weaviate:

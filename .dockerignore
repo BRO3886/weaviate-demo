@@ -1,0 +1,8 @@
+**/node_modules
+static
+frontend
+.venv
+.git
+.gitignore
+.venv
+flickr30k

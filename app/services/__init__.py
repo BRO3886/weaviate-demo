@@ -25,7 +25,7 @@ async def init_services():
     _embedder = Embedder()
     config = get_config()
     _client = weaviate.connect_to_local(
-        host=config.get("weaviate.host", "localhost"),
+        host=config.get("weaviate.host", "weaviate"),
         port=config.get("weaviate.port", 8080),
     )
     _search = WeaviateSearch(client=_client, embedder=_embedder)

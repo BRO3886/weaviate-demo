@@ -1,7 +1,7 @@
+import argparse
 import concurrent.futures
 import io
 import logging
-from collections import deque
 from typing import Any, Dict, List
 
 import weaviate
@@ -15,7 +15,7 @@ from app.services import get_embedder
 from app.services.embedder import Embedder
 from app.services.search import IndexableDoc, WeaviateSearch
 
-BATCH_SIZE = get_config().get("indexer.batch_size", 50)
+BATCH_SIZE = get_config().get("indexer.batch_size", 100)
 
 
 def index_batch(
@@ -76,14 +76,18 @@ def index_row(
     logger.info("indexed image %s", img_id)
 
 
-def index(logger: logging.Logger):
+def index(logger: logging.Logger, dataset: Dataset):
+    config = get_config()
     logger.info("Indexing dataset")
     # ['image', 'caption', 'sentids', 'img_id', 'filename']
     # logger.debug("dataset columns: %s", image_dataset.column_names)
-    batched_dataset = image_dataset.batch(BATCH_SIZE)
+    batched_dataset = dataset.batch(BATCH_SIZE)
     logger.info("batching complete: created %d batches", len(batched_dataset))
 
-    client = weaviate.connect_to_local()
+    client = weaviate.connect_to_local(
+        host=config.get("weaviate.host", "localhost"),
+        port=config.get("weaviate.port", 8080),
+    )
     embedder = get_embedder()
 
     try:
@@ -114,8 +118,18 @@ def index(logger: logging.Logger):
 
 
 if __name__ == "__main__":
-    import warnings
 
-    warnings.filterwarnings("ignore", category=ResourceWarning)
+    parser = argparse.ArgumentParser(description="Index images and captions")
+    parser.add_argument(
+        "--count",
+        type=int,
+        default=None,
+        help="Number of images to index (default: all)",
+    )
+    args = parser.parse_args()
     logger = get_logger("indexer")
-    index(logger)
+    if args.count is not None:
+        dataset = image_dataset.select(range(args.count))
+        index(logger, dataset)
+    else:
+        index(logger, image_dataset)

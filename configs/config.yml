@@ -5,7 +5,7 @@ logging:
 
 
 weaviate:
-  host: "localhost"
+  host: "weaviate"
   port: 8080
 
 indexer:  
