@@ -14,7 +14,9 @@ This will start Weaviate in the background on port 8080. You can check the logs 
 make check-weaviate-logs
 ```
 
-### Download Flickr30k dataset
+### Download Flickr30k dataset (NOT REQUIRED FOR NOW)
+
+> Update: The dataset is now downloaded automatically See `app/data/images.py`.
 
 Install [git-lfs](https://git-lfs.github.com/)
 
