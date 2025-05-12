@@ -11,7 +11,15 @@ Image = {
             "description": "The URL where the image is hosted.",
             "indexFilterable": True,
             "indexSearchable": False,
-        }
+        },
+        {
+            "name": "tags",
+            "dataType": ["text"],
+            "description": "The tags associated with the image.",
+            "indexFilterable": True,
+            "indexSearchable": True,
+            "tokenization": "word",
+        },
     ],
 }
 

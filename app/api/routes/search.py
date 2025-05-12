@@ -6,13 +6,21 @@ from fastapi import APIRouter, Depends, File, UploadFile
 from fastapi.responses import JSONResponse
 from PIL import Image
 
+from app.core.llm import llm
 from app.core.logger import get_logger
 from app.models.exceptions import InternalServerError, ValidationError
-from app.models.search import TextSearchRequest
+from app.models.search import AdditionalWeaviateParams, TextSearchRequest
 from app.services import get_weaviate
 from app.services.search import WeaviateSearch
 
 search_router = APIRouter()
+
+
+knowldege_graph = {
+    # exhaustive list of tags for the search space
+    # query -> extract tags (what tags are there in the query)
+    # while searching in weaviate, use the tags to filter the results
+}
 
 
 @search_router.post("/search-text")
@@ -31,7 +39,10 @@ async def search_text(
         raise ValidationError(message="top_k must be greater than 0")
 
     try:
-        results = weaviate.search(query, top_k)
+        tags = llm.generate_tags(query)
+        results = weaviate.search(
+            query, top_k, additional_params=AdditionalWeaviateParams(tags=tags)
+        )
         end_time = time.time()
         logger.debug(f"time taken to search: {end_time - start_time} seconds")
         return JSONResponse(

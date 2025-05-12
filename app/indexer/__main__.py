@@ -9,6 +9,7 @@ from datasets import Dataset
 from PIL import Image
 
 from app.config import get_config
+from app.core.llm import llm
 from app.core.logger import get_logger
 from app.data.images import image_dataset
 from app.services import get_embedder
@@ -17,6 +18,10 @@ from app.services.search import IndexableDoc, WeaviateSearch
 
 BATCH_SIZE = get_config().get("indexer.batch_size", 100)
 MAX_COUNT = 31783
+
+
+def generate_captions_query(captions: List[str]) -> str:
+    return "For the following captions, extract the tags: " + "\n".join(captions)
 
 
 def index_batch(
@@ -31,10 +36,14 @@ def index_batch(
     img_ids: List[str] = batch["img_id"]
     filenames: List[str] = batch["filename"]
     sent_ids_list: List[List[str]] = batch["sentids"]
+
     num_items = len(image_data_list)
     if num_items == 0:
         logger.info(f"Batch {batch_index} is empty, skipping.")
         return
+
+    # make the llm call to extract tags from captions
+    tags_list = llm.generate_tags(generate_captions_query(captions_list))
 
     for i in range(num_items):
         img_data = image_data_list[i]
@@ -51,6 +60,7 @@ def index_batch(
                 "img_id": img_id,
                 "filename": filename,
                 "sentids": sent_ids,
+                "tags": tags_list,
             },
             search,
             logger,
@@ -67,10 +77,11 @@ def index_row(
     sentids = row["sentids"]
     img_id = row["img_id"]
     filename = row["filename"]
+    tags = row["tags"]
     try:
         path = f"static/{filename}"
         image.save(path)
-        search.index(IndexableDoc(img_id, image, captions, path))
+        search.index(IndexableDoc(img_id, image, captions, path, tags))
     except Exception as e:
         logger.error("error embedding image %s: error: %s", img_id, e)
 
@@ -82,7 +93,7 @@ def index(logger: logging.Logger, dataset: Dataset):
     logger.info("Indexing dataset")
     # ['image', 'caption', 'sentids', 'img_id', 'filename']
     # logger.debug("dataset columns: %s", image_dataset.column_names)
-    batched_dataset = dataset.batch(BATCH_SIZE)
+    batched_dataset = dataset.batch(min(BATCH_SIZE, len(dataset)))
     logger.info("batching complete: created %d batches", len(batched_dataset))
 
     client = weaviate.connect_to_local(
@@ -93,10 +104,12 @@ def index(logger: logging.Logger, dataset: Dataset):
 
     try:
         search = WeaviateSearch(client, embedder)
-        search.create_collections_if_not_exists()
+        search.create_collections_if_not_exists(force_recreate=True)
 
         # for row in image_dataset:
-        #     index_row(row, search, embedder, logger)
+        #     tags_list = llm.generate_tags(generate_captions_query(row["caption"]))
+        #     row["tags"] = tags_list
+        #     index_row(row, search, logger)
         # logger.info("all rows indexed")
 
         with concurrent.futures.ThreadPoolExecutor() as executor:
@@ -137,7 +150,7 @@ if __name__ == "__main__":
             )
             args.count = MAX_COUNT
 
-        dataset = image_dataset.select(range(args.count))
+        dataset = image_dataset.select(range(min(args.count, len(image_dataset))))
         index(logger, dataset)
     else:
         index(logger, image_dataset)

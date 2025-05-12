@@ -1,8 +1,6 @@
-from typing import List
+from typing import Any, Dict, List, Optional
 
 from pydantic import BaseModel
-
-from app.services.search import Document
 
 
 class TextSearchRequest(BaseModel):
@@ -11,4 +9,8 @@ class TextSearchRequest(BaseModel):
 
 
 class SearchResponse(BaseModel):
-    results: List[Document]
+    results: List[Dict[str, Any]]
+
+
+class AdditionalWeaviateParams(BaseModel):
+    tags: Optional[List[str]] = None

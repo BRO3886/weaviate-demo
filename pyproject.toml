@@ -9,6 +9,7 @@ dependencies = [
     "datasets[vision]>=3.5.0",
     "fastapi[standard]>=0.115.12",
     "ftfy>=6.3.1",
+    "google-genai>=1.14.0",
     "regex>=2024.11.6",
     "torch>=2.6.0",
     "torchvision>=0.21.0",

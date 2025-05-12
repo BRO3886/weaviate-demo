@@ -6,23 +6,31 @@ from uuid import UUID
 import weaviate.classes as wvc
 from PIL import Image
 from weaviate import WeaviateClient
+from weaviate.classes.query import Filter
 from weaviate.collections.classes.data import DataReference
 
 import app.utils as utils
 from app.core.logger import get_logger
 from app.data.collection import Caption as CaptionCollection
 from app.data.collection import Image as ImageCollection
+from app.models.search import AdditionalWeaviateParams
 from app.services.embedder import Embedder
 
 
 class IndexableDoc:
     def __init__(
-        self, id: str, image: Image.Image, captions: List[str], image_url: str
+        self,
+        id: str,
+        image: Image.Image,
+        captions: List[str],
+        image_url: str,
+        tags: List[str],
     ):
         self._id = id
         self._image = image
         self._captions = captions
         self._image_url = image_url
+        self._tags = tags
 
     @property
     def id(self) -> str:
@@ -39,6 +47,10 @@ class IndexableDoc:
     @property
     def image_url(self) -> str:
         return self._image_url
+
+    @property
+    def tags(self) -> List[str]:
+        return self._tags
 
     def __str__(self) -> str:
         return self.id
@@ -63,11 +75,26 @@ class WeaviateSearch(Search):
         self.embedder = embedder
         self.logger = get_logger("weaviate_search")
 
-    def create_collections_if_not_exists(self):
+    def create_collections_if_not_exists(self, force_recreate: bool = False):
+        """Create collections if they don't exist or force recreate them.
+
+        Args:
+            force_recreate: If True, delete existing collections and recreate them
+        """
+        if force_recreate:
+            self.delete_collections()
+
         if not self.client.collections.exists("Image"):
             self.client.collections.create_from_dict(ImageCollection)
         if not self.client.collections.exists("Caption"):
             self.client.collections.create_from_dict(CaptionCollection)
+
+    def delete_collections(self):
+        """Delete Image and Caption collections if they exist."""
+        if self.client.collections.exists("Image"):
+            self.client.collections.delete("Image")
+        if self.client.collections.exists("Caption"):
+            self.client.collections.delete("Caption")
 
     def generate_embeddings(self, document: IndexableDoc):
         self.logger.debug(f"generating embeddings for document: {document}")
@@ -84,6 +111,7 @@ class WeaviateSearch(Search):
         img_uuid = image_collection.data.insert(
             properties={
                 "imageUrl": document.image_url,
+                "tags": document.tags,
             },
             vector=image_embedding,
         )
@@ -108,7 +136,16 @@ class WeaviateSearch(Search):
             ]
         )
 
-    def search(self, query: str, top_k: int = 10) -> List[Document]:
+    def search(
+        self,
+        query: str,
+        top_k: int = 10,
+        additional_params: AdditionalWeaviateParams = None,
+    ) -> List[Document]:
+        filters = None
+        if additional_params.tags:
+            filters = Filter.by_property("tags").contains_any(additional_params.tags)
+
         try:
             query_embedding = self.embedder.embed_text(query)
             caption_collection = self.client.collections.get("Caption")
@@ -123,6 +160,7 @@ class WeaviateSearch(Search):
                         return_properties=["imageUrl"],
                     )
                 ],
+                filters=filters,
             )
 
             results: List[Document] = []
